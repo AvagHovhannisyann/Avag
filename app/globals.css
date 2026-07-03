@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BDO design tokens (shadcn/ui convention).
+   Primary = BDO navy (#1B3A6B), destructive/brand accent = BDO red (#E81A3B).
+   ───────────────────────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 217 33% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 217 33% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 33% 12%;
+
+    --primary: 217 60% 26%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 214 32% 94%;
+    --secondary-foreground: 217 45% 22%;
+
+    --muted: 214 32% 94%;
+    --muted-foreground: 215 16% 45%;
+
+    --accent: 214 60% 95%;
+    --accent-foreground: 217 60% 26%;
+
+    --destructive: 350 82% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 60% 34%;
+    --warning: 38 92% 44%;
+
+    --border: 214 25% 88%;
+    --input: 214 25% 84%;
+    --ring: 217 60% 26%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
