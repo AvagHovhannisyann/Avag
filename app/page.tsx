@@ -1,201 +1,119 @@
-"use client";
-
-import { useMemo, useState } from "react";
-import HypothesisForm from "@/components/HypothesisForm";
-import ElementCard from "@/components/ElementCard";
-import { ValuationInput, Hypothesis, ReviewedElement } from "@/lib/types";
+import Link from "next/link";
 import {
-  ReviewSectionModel,
-  toReviewSections,
-  toExportSections,
-} from "@/lib/review";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Lightbulb,
+  Table2,
+  Building2,
+  Calculator,
+  ShieldCheck,
+  ArrowRight,
+} from "lucide-react";
 
-export default function Home() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [source, setSource] = useState<"model" | "demo" | null>(null);
-  const [modelName, setModelName] = useState<string>("");
-  const [companyName, setCompanyName] = useState<string>("");
-  const [summary, setSummary] = useState<string>("");
-  const [sections, setSections] = useState<ReviewSectionModel[]>([]);
-  const [exporting, setExporting] = useState(false);
+const modules = [
+  {
+    href: "/hypothesis",
+    icon: Lightbulb,
+    phase: "Phase 1",
+    title: "Valuation Hypothesis Agent",
+    description:
+      "Form an initial valuation logic — approaches, value drivers, assumptions, comparables, risks and open questions — then accept, amend or reject each element.",
+  },
+  {
+    href: "/financial-model",
+    icon: Table2,
+    phase: "Phase 2",
+    title: "Financial Model & Business Plan",
+    description:
+      "Normalize financial statements, structure the assumption book across revenue, OPEX, CAPEX, working capital, debt and tax, run consistency checks and draft the financial plan narrative.",
+  },
+  {
+    href: "/tangible-assets",
+    icon: Building2,
+    phase: "Phase 3",
+    title: "Tangible Asset Valuation",
+    description:
+      "Structure market comparables with source, date, country, VAT and currency; apply transport, customs, condition and age adjustments; compute the indicated value range.",
+  },
+  {
+    href: "/toolkit",
+    icon: Calculator,
+    phase: "Phase 4",
+    title: "Toolkit & Sector Knowledge",
+    description:
+      "WACC build-up calculator, sector knowledge packs for priority industries, and a cross-document consistency checker for model, report and presentation.",
+  },
+];
 
-  async function handleGenerate(input: ValuationInput) {
-    setLoading(true);
-    setError(null);
-    setSource(null);
-    try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Generation failed.");
-      const hypothesis = data.hypothesis as Hypothesis;
-      setCompanyName(input.companyName);
-      setSummary(hypothesis.summary);
-      setSections(toReviewSections(hypothesis));
-      setSource(data.source);
-      setModelName(data.model);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function updateElement(sectionKey: string, next: ReviewedElement) {
-    setSections((prev) =>
-      prev.map((s) =>
-        s.key !== sectionKey
-          ? s
-          : { ...s, elements: s.elements.map((el) => (el.id === next.id ? next : el)) },
-      ),
-    );
-  }
-
-  function bulkAccept() {
-    setSections((prev) =>
-      prev.map((s) => ({
-        ...s,
-        elements: s.elements.map((el) =>
-          el.decision === "pending" ? { ...el, decision: "accepted" as const } : el,
-        ),
-      })),
-    );
-  }
-
-  const stats = useMemo(() => {
-    const all = sections.flatMap((s) => s.elements);
-    return {
-      total: all.length,
-      accepted: all.filter((e) => e.decision === "accepted").length,
-      amended: all.filter((e) => e.decision === "amended").length,
-      rejected: all.filter((e) => e.decision === "rejected").length,
-      pending: all.filter((e) => e.decision === "pending").length,
-    };
-  }, [sections]);
-
-  async function handleExport() {
-    setExporting(true);
-    setError(null);
-    try {
-      const meta = `Reviewed ${stats.accepted + stats.amended} of ${stats.total} proposed elements · ${new Date().toLocaleString()}`;
-      const res = await fetch("/api/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyName,
-          meta,
-          sections: [
-            { title: "Summary", items: summary ? [summary] : [] },
-            ...toExportSections(sections),
-          ],
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Export failed.");
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${companyName || "valuation"}-hypothesis.docx`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setExporting(false);
-    }
-  }
-
-  const hasResult = sections.length > 0;
-
+export default function Dashboard() {
   return (
-    <div className="space-y-6">
-      <HypothesisForm onSubmit={handleGenerate} loading={loading} />
-
-      {error && (
-        <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-          {error}
-        </div>
-      )}
-
-      {source === "demo" && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <strong>Demo mode</strong> — no model API key configured, so a sample
-          hypothesis is shown. Set <code>LLM_API_KEY</code> /{" "}
-          <code>LLM_BASE_URL</code> / <code>LLM_MODEL</code> to use a real model.
-        </div>
-      )}
-
-      {hasResult && (
-        <section className="space-y-5">
-          <div className="card">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold">
-                  Valuation hypothesis — {companyName}
-                </h2>
-                {source === "model" && (
-                  <p className="text-xs text-slate-500">Generated by model: {modelName}</p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button className="btn-ghost" onClick={bulkAccept} type="button">
-                  Accept all pending
-                </button>
-                <button
-                  className="btn-primary"
-                  onClick={handleExport}
-                  type="button"
-                  disabled={exporting}
-                >
-                  {exporting ? "Exporting…" : "Export to Word"}
-                </button>
-              </div>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-slate-700">{summary}</p>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="chip bg-slate-100 text-slate-600">
-                {stats.total} elements
-              </span>
-              <span className="chip bg-emerald-100 text-emerald-800">
-                {stats.accepted} accepted
-              </span>
-              <span className="chip bg-amber-100 text-amber-800">
-                {stats.amended} amended
-              </span>
-              <span className="chip bg-rose-100 text-rose-800">
-                {stats.rejected} rejected
-              </span>
-              <span className="chip bg-slate-100 text-slate-500">
-                {stats.pending} pending
-              </span>
-            </div>
+    <div className="space-y-8">
+      <section className="rounded-xl border bg-gradient-to-br from-bdo-navy to-[#12294c] px-6 py-10 text-white shadow-md">
+        <div className="max-w-3xl space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-5 w-1 rounded-sm bg-bdo-red" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-white/70">
+              BDO Armenia · Deal Advisory
+            </span>
           </div>
+          <h1 className="text-3xl font-bold leading-tight">
+            AI tools for valuation and financial modeling
+          </h1>
+          <p className="text-sm leading-relaxed text-white/80">
+            Structured first drafts for valuation hypotheses, financial models,
+            business plans and tangible asset valuations — so consultants spend
+            less time on mechanical preparation and more on challenging
+            assumptions, interpreting results and refining conclusions.
+          </p>
+        </div>
+      </section>
 
-          {sections.map((section) => (
-            <div key={section.key} className="space-y-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                {section.title}
-              </h3>
-              <div className="grid grid-cols-1 gap-3">
-                {section.elements.map((el) => (
-                  <ElementCard
-                    key={el.id}
-                    element={el}
-                    onChange={(next) => updateElement(section.key, next)}
-                  />
-                ))}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {modules.map(({ href, icon: Icon, phase, title, description }) => (
+          <Card key={href} className="flex flex-col transition-shadow hover:shadow-md">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <Badge variant="secondary">{phase}</Badge>
               </div>
-            </div>
-          ))}
-        </section>
-      )}
+              <CardTitle className="pt-2 text-base">{title}</CardTitle>
+              <CardDescription className="leading-relaxed">
+                {description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="mt-auto">
+              <Link href={href}>
+                <Button variant="outline" size="sm">
+                  Open module <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Alert variant="info">
+        <ShieldCheck className="h-4 w-4" />
+        <AlertTitle>Governing principle</AlertTitle>
+        <AlertDescription>
+          AI outputs are preliminary working materials that support — never
+          replace — professional judgment. Final valuation approaches,
+          assumptions, calculations, conclusions and reports remain subject to
+          professional review, source validation and internal quality control.
+          Use dummy or anonymized data with third-party model APIs; confidential
+          client data requires the self-hosted model configuration.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }

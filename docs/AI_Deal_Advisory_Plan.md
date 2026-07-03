@@ -131,6 +131,11 @@ steps use the faster model.
 
 ## 5. Phased roadmap
 
+> **Status (July 2026): all four phases below are implemented** in this
+> repository as the *Deal Advisory AI Suite* — see `README.md` for the module
+> map, model configuration and verification notes. The roadmap text is kept
+> as originally planned for traceability.
+
 ### Phase 0 — Foundations (decisions + scaffold)
 - Confirm MVP slice, deployment/privacy constraint, tech stack.
 - Stand up repo, model abstraction, prompt/eval harness, synthetic test data.

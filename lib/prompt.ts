@@ -1,4 +1,5 @@
 import { ValuationInput } from "./types";
+import { sectorPackById, sectorPackPromptBlock } from "./sectors";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // System prompt. Encodes the proposal's core principle: the agent produces a
@@ -44,6 +45,8 @@ export function buildUserPrompt(input: ValuationInput): string {
   const field = (label: string, value?: string) =>
     value && value.trim() ? `${label}: ${value.trim()}` : `${label}: (not provided)`;
 
+  const pack = input.sectorPackId ? sectorPackById(input.sectorPackId) : undefined;
+
   return [
     "Prepare an initial valuation hypothesis for the following engagement.",
     "",
@@ -63,6 +66,7 @@ export function buildUserPrompt(input: ValuationInput): string {
     "Market / industry context:",
     input.marketContext?.trim() || "(not provided)",
     "",
+    ...(pack ? [sectorPackPromptBlock(pack), ""] : []),
     "Produce the structured JSON hypothesis now. Where key inputs are missing, reflect that in questionsForReview rather than assuming values.",
   ].join("\n");
 }

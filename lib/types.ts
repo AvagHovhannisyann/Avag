@@ -15,6 +15,7 @@ export const ValuationInputSchema = z.object({
   businessDescription: z.string().optional().default(""),
   financialSummary: z.string().optional().default(""),
   marketContext: z.string().optional().default(""),
+  sectorPackId: z.string().optional().default(""),
 });
 export type ValuationInput = z.infer<typeof ValuationInputSchema>;
 

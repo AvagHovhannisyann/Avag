@@ -1,12 +1,19 @@
 "use client";
 
 import { ReviewedElement, Decision } from "@/lib/types";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Check, PencilLine, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const decisionStyles: Record<Decision, string> = {
-  pending: "bg-slate-100 text-slate-600",
-  accepted: "bg-emerald-100 text-emerald-800",
-  amended: "bg-amber-100 text-amber-800",
-  rejected: "bg-rose-100 text-rose-800",
+const decisionBadge: Record<Decision, { variant: any; label: string }> = {
+  pending: { variant: "muted", label: "Pending" },
+  accepted: { variant: "success", label: "Accepted" },
+  amended: { variant: "warning", label: "Amended" },
+  rejected: { variant: "danger", label: "Rejected" },
 };
 
 export default function ElementCard({
@@ -17,61 +24,52 @@ export default function ElementCard({
   onChange: (next: ReviewedElement) => void;
 }) {
   const set = (patch: Partial<ReviewedElement>) => onChange({ ...element, ...patch });
-
   const rejected = element.decision === "rejected";
+  const badge = decisionBadge[element.decision];
 
   return (
-    <div className={`card ${rejected ? "opacity-60" : ""}`}>
+    <Card className={cn("p-4", rejected && "opacity-60")}>
       <div className="flex items-start justify-between gap-3">
-        <p className={`text-sm leading-relaxed ${rejected ? "line-through" : ""}`}>
+        <p className={cn("text-sm leading-relaxed", rejected && "line-through")}>
           {element.original}
         </p>
-        <span className={`chip shrink-0 ${decisionStyles[element.decision]}`}>
-          {element.decision}
-        </span>
+        <Badge variant={badge.variant} className="shrink-0">
+          {badge.label}
+        </Badge>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <button
+        <Button
           type="button"
-          className={`chip cursor-pointer border ${
-            element.decision === "accepted"
-              ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-              : "border-slate-200 text-slate-600 hover:bg-slate-50"
-          }`}
+          size="sm"
+          variant={element.decision === "accepted" ? "default" : "outline"}
           onClick={() => set({ decision: "accepted" })}
         >
-          ✓ Accept
-        </button>
-        <button
+          <Check /> Accept
+        </Button>
+        <Button
           type="button"
-          className={`chip cursor-pointer border ${
-            element.decision === "amended"
-              ? "border-amber-300 bg-amber-50 text-amber-800"
-              : "border-slate-200 text-slate-600 hover:bg-slate-50"
-          }`}
+          size="sm"
+          variant={element.decision === "amended" ? "secondary" : "outline"}
           onClick={() =>
             set({ decision: "amended", amended: element.amended || element.original })
           }
         >
-          ✎ Amend
-        </button>
-        <button
+          <PencilLine /> Amend
+        </Button>
+        <Button
           type="button"
-          className={`chip cursor-pointer border ${
-            element.decision === "rejected"
-              ? "border-rose-300 bg-rose-50 text-rose-800"
-              : "border-slate-200 text-slate-600 hover:bg-slate-50"
-          }`}
+          size="sm"
+          variant={element.decision === "rejected" ? "destructive" : "outline"}
           onClick={() => set({ decision: "rejected" })}
         >
-          ✕ Reject
-        </button>
+          <X /> Reject
+        </Button>
       </div>
 
       {element.decision === "amended" && (
-        <textarea
-          className="textarea mt-3"
+        <Textarea
+          className="mt-3"
           value={element.amended}
           onChange={(e) => set({ amended: e.target.value })}
           placeholder="Amend the proposed text…"
@@ -79,13 +77,13 @@ export default function ElementCard({
       )}
 
       {element.decision !== "rejected" && (
-        <input
-          className="input mt-2"
+        <Input
+          className="mt-2"
           value={element.note}
           onChange={(e) => set({ note: e.target.value })}
           placeholder="Reviewer note (optional)"
         />
       )}
-    </div>
+    </Card>
   );
 }

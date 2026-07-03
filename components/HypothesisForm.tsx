@@ -2,6 +2,14 @@
 
 import { useState } from "react";
 import { ValuationInput } from "@/lib/types";
+import { SECTOR_PACKS } from "@/lib/sectors";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Sparkles, Eraser, FlaskConical } from "lucide-react";
 
 const SAMPLE: ValuationInput = {
   companyName: "Ararat Foods LLC",
@@ -16,6 +24,7 @@ const SAMPLE: ValuationInput = {
     "Revenue (last 3y): 6.1bn / 7.0bn / 8.2bn AMD. EBITDA margin ~14-16%. Modest net debt. CAPEX cycle for a new line completed last year.",
   marketContext:
     "Regional dairy demand growing mid-single digits; input (raw milk) price volatility; increasing competition from imports; export opportunities to neighbouring markets.",
+  sectorPackId: "manufacturing",
 };
 
 const EMPTY: ValuationInput = {
@@ -28,6 +37,7 @@ const EMPTY: ValuationInput = {
   businessDescription: "",
   financialSummary: "",
   marketContext: "",
+  sectorPackId: "",
 };
 
 export default function HypothesisForm({
@@ -41,117 +51,145 @@ export default function HypothesisForm({
   const set = (patch: Partial<ValuationInput>) => setForm((f) => ({ ...f, ...patch }));
 
   return (
-    <form
-      className="card space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit(form);
-      }}
-    >
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Engagement inputs</h2>
-        <button
-          type="button"
-          className="text-xs font-medium text-bdo-blue hover:underline"
-          onClick={() => setForm(SAMPLE)}
-        >
-          Load sample (dummy data)
-        </button>
-      </div>
+    <Card>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(form);
+        }}
+      >
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Engagement inputs</CardTitle>
+              <CardDescription>
+                Provide what is known — missing items become questions for
+                professional review, not invented values.
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setForm(SAMPLE)}
+            >
+              <FlaskConical /> Load sample
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="companyName">Company name *</Label>
+              <Input
+                id="companyName"
+                required
+                value={form.companyName}
+                onChange={(e) => set({ companyName: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sector">Sector / industry *</Label>
+              <Input
+                id="sector"
+                required
+                value={form.sector}
+                onChange={(e) => set({ sector: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sectorPack">Sector knowledge pack</Label>
+              <Select
+                id="sectorPack"
+                value={form.sectorPackId}
+                onChange={(e) => set({ sectorPackId: e.target.value })}
+              >
+                <option value="">None (generic)</option>
+                {SECTOR_PACKS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="country">Country</Label>
+              <Input
+                id="country"
+                value={form.country}
+                onChange={(e) => set({ country: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="currency">Reporting currency</Label>
+              <Input
+                id="currency"
+                value={form.currency}
+                onChange={(e) => set({ currency: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="valuationDate">Valuation date</Label>
+              <Input
+                id="valuationDate"
+                type="date"
+                value={form.valuationDate}
+                onChange={(e) => set({ valuationDate: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="purpose">Purpose of valuation</Label>
+              <Input
+                id="purpose"
+                value={form.valuationPurpose}
+                onChange={(e) => set({ valuationPurpose: e.target.value })}
+                placeholder="e.g. M&A, financial reporting, litigation"
+              />
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className="label">Company name *</label>
-          <input
-            className="input"
-            required
-            value={form.companyName}
-            onChange={(e) => set({ companyName: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="label">Sector / industry *</label>
-          <input
-            className="input"
-            required
-            value={form.sector}
-            onChange={(e) => set({ sector: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="label">Country</label>
-          <input
-            className="input"
-            value={form.country}
-            onChange={(e) => set({ country: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="label">Reporting currency</label>
-          <input
-            className="input"
-            value={form.currency}
-            onChange={(e) => set({ currency: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="label">Valuation date</label>
-          <input
-            className="input"
-            type="date"
-            value={form.valuationDate}
-            onChange={(e) => set({ valuationDate: e.target.value })}
-          />
-        </div>
-        <div>
-          <label className="label">Purpose of valuation</label>
-          <input
-            className="input"
-            value={form.valuationPurpose}
-            onChange={(e) => set({ valuationPurpose: e.target.value })}
-            placeholder="e.g. M&A, financial reporting, litigation"
-          />
-        </div>
-      </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="description">Business description</Label>
+            <Textarea
+              id="description"
+              value={form.businessDescription}
+              onChange={(e) => set({ businessDescription: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="financials">
+              Financial summary (historical & forecast)
+            </Label>
+            <Textarea
+              id="financials"
+              value={form.financialSummary}
+              onChange={(e) => set({ financialSummary: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="market">Market / industry context</Label>
+            <Textarea
+              id="market"
+              value={form.marketContext}
+              onChange={(e) => set({ marketContext: e.target.value })}
+            />
+          </div>
 
-      <div>
-        <label className="label">Business description</label>
-        <textarea
-          className="textarea"
-          value={form.businessDescription}
-          onChange={(e) => set({ businessDescription: e.target.value })}
-        />
-      </div>
-      <div>
-        <label className="label">Financial summary (historical & forecast)</label>
-        <textarea
-          className="textarea"
-          value={form.financialSummary}
-          onChange={(e) => set({ financialSummary: e.target.value })}
-        />
-      </div>
-      <div>
-        <label className="label">Market / industry context</label>
-        <textarea
-          className="textarea"
-          value={form.marketContext}
-          onChange={(e) => set({ marketContext: e.target.value })}
-        />
-      </div>
-
-      <div className="flex items-center gap-3">
-        <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? "Generating…" : "Generate hypothesis"}
-        </button>
-        <button
-          type="button"
-          className="btn-ghost"
-          disabled={loading}
-          onClick={() => setForm(EMPTY)}
-        >
-          Clear
-        </button>
-      </div>
-    </form>
+          <div className="flex items-center gap-3 pt-1">
+            <Button type="submit" disabled={loading}>
+              <Sparkles /> {loading ? "Generating…" : "Generate hypothesis"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              onClick={() => setForm(EMPTY)}
+            >
+              <Eraser /> Clear
+            </Button>
+          </div>
+        </CardContent>
+      </form>
+    </Card>
   );
 }

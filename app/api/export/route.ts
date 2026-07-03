@@ -14,12 +14,15 @@ export const dynamic = "force-dynamic";
 // output. The document is explicitly labelled a preliminary working material.
 export async function POST(req: NextRequest) {
   try {
-    const { companyName, sections, meta } = await req.json();
+    const { companyName, sections, meta, docTitle } = await req.json();
 
     const children: Paragraph[] = [];
 
     children.push(
-      new Paragraph({ text: "Valuation Hypothesis — Working Paper", heading: HeadingLevel.TITLE }),
+      new Paragraph({
+        text: docTitle || "Valuation Hypothesis — Working Paper",
+        heading: HeadingLevel.TITLE,
+      }),
       new Paragraph({
         children: [
           new TextRun({ text: companyName || "Untitled engagement", bold: true, size: 28 }),
