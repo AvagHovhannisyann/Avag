@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import HypothesisForm from "@/components/HypothesisForm";
 import ReviewBoard, { ReviewStats, useReviewStats } from "@/components/ReviewBoard";
+import SaveButton from "@/components/SaveButton";
+import { getItem } from "@/lib/saved";
 import { ValuationInput, Hypothesis, ReviewedElement } from "@/lib/types";
 import {
   ReviewSectionModel,
@@ -28,6 +30,19 @@ export default function HypothesisPage() {
   const [exporting, setExporting] = useState(false);
 
   const stats = useReviewStats(sections);
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (!id) return;
+    getItem(id).then((item) => {
+      if (!item || item.module !== "hypothesis") return;
+      const p = item.payload;
+      setCompanyName(p.companyName ?? "");
+      setSummary(p.summary ?? "");
+      setSections(p.sections ?? []);
+      setImages(p.images ?? []);
+    });
+  }, []);
 
   async function handleGenerate(input: ValuationInput) {
     setLoading(true);
@@ -155,6 +170,11 @@ export default function HypothesisPage() {
                   <Button variant="outline" size="sm" onClick={bulkAccept} type="button">
                     <CheckCheck /> Accept all pending
                   </Button>
+                  <SaveButton
+                    module="hypothesis"
+                    title={companyName}
+                    getPayload={() => ({ companyName, summary, sections, images })}
+                  />
                   <Button size="sm" onClick={handleExport} type="button" disabled={exporting}>
                     <FileDown /> {exporting ? "Exporting…" : "Export to Word"}
                   </Button>

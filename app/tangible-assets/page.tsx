@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   TangibleInput,
   TangibleOutput,
@@ -20,6 +20,8 @@ import { ReviewedElement } from "@/lib/types";
 import ReviewBoard, { ReviewStats, useReviewStats } from "@/components/ReviewBoard";
 import ComparablesTable from "@/components/ComparablesTable";
 import ImageUpload from "@/components/ImageUpload";
+import SaveButton from "@/components/SaveButton";
+import { getItem } from "@/lib/saved";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +87,21 @@ export default function TangibleAssetsPage() {
 
   const stats = useReviewStats(sections);
   const set = (patch: Partial<TangibleInput>) => setForm((f) => ({ ...f, ...patch }));
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (!id) return;
+    getItem(id).then((item) => {
+      if (!item || item.module !== "tangible-assets") return;
+      const p = item.payload;
+      if (p.form) setForm(p.form);
+      if (p.output) setOutput(p.output);
+      if (p.sections) setSections(p.sections);
+      if (p.rows) setRows(p.rows);
+      if (typeof p.vatRate === "number") setVatRate(p.vatRate);
+      if (p.reportSections) setReportSections(p.reportSections);
+    });
+  }, []);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -432,6 +449,11 @@ export default function TangibleAssetsPage() {
                   <Button variant="outline" size="sm" onClick={bulkAccept} type="button">
                     <CheckCheck /> Accept all pending
                   </Button>
+                  <SaveButton
+                    module="tangible-assets"
+                    title={form.assetName}
+                    getPayload={() => ({ form, output, sections, rows, vatRate, reportSections })}
+                  />
                   <Button
                     variant="outline"
                     size="sm"

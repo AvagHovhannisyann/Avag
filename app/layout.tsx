@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import BdoLogo from "@/components/BdoLogo";
 import NavLinks from "@/components/NavLinks";
+import UserMenu from "@/components/UserMenu";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "BDO Deal Advisory — AI Suite",
@@ -9,11 +11,16 @@ export const metadata: Metadata = {
     "AI-supported valuation, financial modeling and tangible asset workflows for BDO Armenia Deal Advisory. Preliminary working materials only.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col">
@@ -31,7 +38,10 @@ export default function RootLayout({
                 </div>
               </div>
             </div>
-            <NavLinks />
+            <div className="flex items-center gap-1">
+              <NavLinks />
+              <UserMenu email={user?.email ?? null} />
+            </div>
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>

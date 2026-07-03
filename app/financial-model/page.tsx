@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FinModelInput, FinModelOutput, toFinReviewSections } from "@/lib/finmodel";
 import { ReviewSectionModel, toExportSections } from "@/lib/review";
 import { ReviewedElement } from "@/lib/types";
 import { SECTOR_PACKS } from "@/lib/sectors";
 import ReviewBoard, { ReviewStats, useReviewStats } from "@/components/ReviewBoard";
 import ImageUpload from "@/components/ImageUpload";
+import SaveButton from "@/components/SaveButton";
+import { getItem } from "@/lib/saved";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -83,6 +85,19 @@ export default function FinancialModelPage() {
 
   const stats = useReviewStats(sections);
   const set = (patch: Partial<FinModelInput>) => setForm((f) => ({ ...f, ...patch }));
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (!id) return;
+    getItem(id).then((item) => {
+      if (!item || item.module !== "financial-model") return;
+      const p = item.payload;
+      if (p.form) setForm(p.form);
+      if (p.output) setOutput(p.output);
+      if (p.sections) setSections(p.sections);
+      if (p.narrative) setNarrative(p.narrative);
+    });
+  }, []);
 
   async function handleGenerate(e: React.FormEvent) {
     e.preventDefault();
@@ -438,6 +453,11 @@ export default function FinancialModelPage() {
                   <Button variant="outline" size="sm" onClick={bulkAccept} type="button">
                     <CheckCheck /> Accept all pending
                   </Button>
+                  <SaveButton
+                    module="financial-model"
+                    title={form.companyName}
+                    getPayload={() => ({ form, output, sections, narrative })}
+                  />
                   <Button
                     variant="outline"
                     size="sm"

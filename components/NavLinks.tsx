@@ -9,6 +9,7 @@ import {
   Table2,
   Building2,
   Calculator,
+  History,
 } from "lucide-react";
 
 const links = [
@@ -17,6 +18,7 @@ const links = [
   { href: "/financial-model", label: "Financial Model", icon: Table2 },
   { href: "/tangible-assets", label: "Tangible Assets", icon: Building2 },
   { href: "/toolkit", label: "Toolkit", icon: Calculator },
+  { href: "/history", label: "History", icon: History },
 ];
 
 export default function NavLinks() {

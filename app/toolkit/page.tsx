@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SECTOR_PACKS } from "@/lib/sectors";
 import { ConsistencyOutput } from "@/lib/consistency";
 import { UploadedImage } from "@/lib/images";
 import WaccCalculator from "@/components/WaccCalculator";
 import ImageUpload from "@/components/ImageUpload";
+import SaveButton from "@/components/SaveButton";
+import { getItem } from "@/lib/saved";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,21 @@ export default function ToolkitPage() {
   const [checkError, setCheckError] = useState<string | null>(null);
   const [checkSource, setCheckSource] = useState<"model" | "demo" | null>(null);
   const [result, setResult] = useState<ConsistencyOutput | null>(null);
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (!id) return;
+    getItem(id).then((item) => {
+      if (!item || item.module !== "consistency") return;
+      const p = item.payload;
+      setModelExtract(p.modelExtract ?? "");
+      setReportExtract(p.reportExtract ?? "");
+      setPptExtract(p.presentationExtract ?? "");
+      setContext(p.context ?? "");
+      setCcImages(p.images ?? []);
+      setResult(p.result ?? null);
+    });
+  }, []);
 
   async function runCheck(e: React.FormEvent) {
     e.preventDefault();
@@ -219,8 +236,24 @@ export default function ToolkitPage() {
           {result && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Findings</CardTitle>
-                <CardDescription>{result.summary}</CardDescription>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base">Findings</CardTitle>
+                    <CardDescription>{result.summary}</CardDescription>
+                  </div>
+                  <SaveButton
+                    module="consistency"
+                    title={context || "Consistency check"}
+                    getPayload={() => ({
+                      modelExtract,
+                      reportExtract,
+                      presentationExtract: pptExtract,
+                      context,
+                      images: ccImages,
+                      result,
+                    })}
+                  />
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {result.findings.length === 0 && (
