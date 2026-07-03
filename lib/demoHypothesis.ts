@@ -1,4 +1,5 @@
 import { Hypothesis, ValuationInput } from "./types";
+import { imageAckNote } from "./images";
 
 // A realistic sample hypothesis returned when no LLM_API_KEY is configured, so
 // the full review/export flow can be demonstrated offline with dummy data.
@@ -6,7 +7,7 @@ export function demoHypothesis(input: ValuationInput): Hypothesis {
   const co = input.companyName || "the target company";
   const sector = input.sector || "the sector";
   return {
-    summary: `Initial valuation logic for ${co}, operating in ${sector}. Given an established operating history and identifiable cash flows, an income approach is proposed as primary, cross-checked against market multiples. A cost/net-asset view is retained as a floor. All elements below are a starting point for professional review.`,
+    summary: `Initial valuation logic for ${co}, operating in ${sector}. Given an established operating history and identifiable cash flows, an income approach is proposed as primary, cross-checked against market multiples. A cost/net-asset view is retained as a floor. All elements below are a starting point for professional review.${imageAckNote(input.images)}`,
     approaches: [
       {
         approach: "Income",

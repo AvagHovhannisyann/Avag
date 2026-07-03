@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { SECTOR_PACKS } from "@/lib/sectors";
 import { ConsistencyOutput } from "@/lib/consistency";
+import { UploadedImage } from "@/lib/images";
 import WaccCalculator from "@/components/WaccCalculator";
+import ImageUpload from "@/components/ImageUpload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,7 @@ export default function ToolkitPage() {
   const [reportExtract, setReportExtract] = useState("");
   const [pptExtract, setPptExtract] = useState("");
   const [context, setContext] = useState("");
+  const [ccImages, setCcImages] = useState<UploadedImage[]>([]);
   const [checking, setChecking] = useState(false);
   const [checkError, setCheckError] = useState<string | null>(null);
   const [checkSource, setCheckSource] = useState<"model" | "demo" | null>(null);
@@ -44,6 +47,7 @@ export default function ToolkitPage() {
           reportExtract,
           presentationExtract: pptExtract,
           context,
+          images: ccImages,
         }),
       });
       const data = await res.json();
@@ -133,8 +137,9 @@ export default function ToolkitPage() {
                   Excel ↔ Word ↔ PowerPoint consistency check
                 </CardTitle>
                 <CardDescription>
-                  Paste extracts from each document; the checker flags mismatched
-                  figures, assumptions, units and terminology.
+                  Paste extracts from each document, or attach screenshots below;
+                  the checker flags mismatched figures, assumptions, units and
+                  terminology. Provide at least two sources (text and/or images).
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -149,10 +154,9 @@ export default function ToolkitPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="cc-model">Excel model extract *</Label>
+                    <Label htmlFor="cc-model">Excel model extract</Label>
                     <Textarea
                       id="cc-model"
-                      required
                       className="min-h-[140px]"
                       value={modelExtract}
                       onChange={(e) => setModelExtract(e.target.value)}
@@ -160,10 +164,9 @@ export default function ToolkitPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="cc-report">Word report extract *</Label>
+                    <Label htmlFor="cc-report">Word report extract</Label>
                     <Textarea
                       id="cc-report"
-                      required
                       className="min-h-[140px]"
                       value={reportExtract}
                       onChange={(e) => setReportExtract(e.target.value)}
@@ -181,6 +184,12 @@ export default function ToolkitPage() {
                     />
                   </div>
                 </div>
+                <ImageUpload
+                  images={ccImages}
+                  onChange={setCcImages}
+                  label="Screenshots (alternative to pasting text)"
+                  hint="Screenshots of the Excel model, Word report or PowerPoint slides — compared just like pasted extracts above."
+                />
                 <Button type="submit" disabled={checking}>
                   <ScanSearch /> {checking ? "Checking…" : "Run consistency check"}
                 </Button>

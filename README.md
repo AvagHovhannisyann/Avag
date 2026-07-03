@@ -17,6 +17,14 @@ Every module exports **Word working papers** (`docx`) and, where relevant,
 skeleton and the comparables calculation sheet. Each export is labelled a
 preliminary working material.
 
+**Image upload** is available in all four modules — photos, scans or
+screenshots (financial statement pages, asset condition photos, listing/report
+excerpts, Excel/Word/PPT slides for the consistency checker) are resized and
+encoded client-side, sent to the model as vision content when a vision-capable
+model is configured, and embedded as an appendix in Word/Excel exports. In
+demo mode (no API key), uploads are acknowledged in the output so the full
+flow can still be reviewed offline.
+
 ## Guiding principle
 
 > All AI-generated outputs are preliminary working materials, subject to

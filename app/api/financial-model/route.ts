@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       user: buildFinModelUserPrompt(input),
       schema: FinModelOutputSchema,
       demo: () => demoFinModel(input),
+      images: input.images,
     });
     return NextResponse.json({
       output: result.data,

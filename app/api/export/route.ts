@@ -5,16 +5,27 @@ import {
   Paragraph,
   HeadingLevel,
   TextRun,
+  ImageRun,
 } from "docx";
+import { dataUrlToBuffer, readImageDimensions, fitWithin } from "@/lib/imageDims";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Builds a Word (.docx) "Valuation Hypothesis — Working Paper" from the reviewed
-// output. The document is explicitly labelled a preliminary working material.
+const MIME_TO_DOCX_TYPE: Record<string, "jpg" | "png" | "gif" | "bmp"> = {
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/png": "png",
+  "image/gif": "gif",
+  "image/bmp": "bmp",
+};
+
+// Builds a Word (.docx) working paper from the reviewed output, optionally
+// with an appendix of the supporting images the consultant uploaded. The
+// document is explicitly labelled a preliminary working material.
 export async function POST(req: NextRequest) {
   try {
-    const { companyName, sections, meta, docTitle } = await req.json();
+    const { companyName, sections, meta, docTitle, images } = await req.json();
 
     const children: Paragraph[] = [];
 
@@ -58,6 +69,49 @@ export async function POST(req: NextRequest) {
         children.push(
           new Paragraph({ text: item, bullet: { level: 0 } }),
         );
+      }
+    }
+
+    const uploadedImages = (images ?? []) as { name: string; dataUrl: string }[];
+    if (uploadedImages.length) {
+      children.push(
+        new Paragraph({ text: "Appendix — Supporting materials", heading: HeadingLevel.HEADING_1 }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Images uploaded by the consultant during the engagement, reproduced here for reference.",
+              italics: true,
+              color: "555555",
+            }),
+          ],
+        }),
+      );
+      for (const img of uploadedImages) {
+        try {
+          const { buffer, mime } = dataUrlToBuffer(img.dataUrl);
+          const type = MIME_TO_DOCX_TYPE[mime] ?? "jpg";
+          const dims = fitWithin(readImageDimensions(buffer), 500, 400);
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: img.name, bold: true, size: 18 })],
+            }),
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  type,
+                  data: buffer,
+                  transformation: dims,
+                }),
+              ],
+            }),
+          );
+        } catch {
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: `[Could not embed image: ${img.name}]`, color: "999999" })],
+            }),
+          );
+        }
       }
     }
 

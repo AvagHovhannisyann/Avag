@@ -6,6 +6,7 @@ import { ReviewSectionModel, toExportSections } from "@/lib/review";
 import { ReviewedElement } from "@/lib/types";
 import { SECTOR_PACKS } from "@/lib/sectors";
 import ReviewBoard, { ReviewStats, useReviewStats } from "@/components/ReviewBoard";
+import ImageUpload from "@/components/ImageUpload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ const EMPTY: FinModelInput = {
   businessContext: "",
   assumptionNotes: "",
   sectorPackId: "",
+  images: [],
 };
 
 const SAMPLE_EXISTING: FinModelInput = {
@@ -50,6 +52,7 @@ const SAMPLE_EXISTING: FinModelInput = {
     "Dairy and juice producer; single plant; new filling line commissioned FY25; export share 18% and growing.",
   assumptionNotes: "Management forecasts 12% revenue growth; challenge against capacity.",
   sectorPackId: "manufacturing",
+  images: [],
 };
 
 const SAMPLE_NEW: FinModelInput = {
@@ -64,6 +67,7 @@ const SAMPLE_NEW: FinModelInput = {
     "Greenfield solar plant near Lake Sevan; grid connection agreement in progress; sponsors seek 70/30 debt/equity structure.",
   assumptionNotes: "Check degradation (0.4-0.5%/yr) and curtailment risk.",
   sectorPackId: "renewable-energy",
+  images: [],
 };
 
 export default function FinancialModelPage() {
@@ -146,6 +150,7 @@ export default function FinancialModelPage() {
             ...toExportSections(sections),
             { title: "Financial plan narrative (draft)", items: narrative ? [narrative] : [] },
           ],
+          images: form.images,
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error || "Export failed.");
@@ -229,6 +234,7 @@ export default function FinancialModelPage() {
               ],
             },
           ],
+          images: form.images,
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error || "Export failed.");
@@ -372,6 +378,13 @@ export default function FinancialModelPage() {
                 onChange={(e) => set({ assumptionNotes: e.target.value })}
               />
             </div>
+
+            <ImageUpload
+              images={form.images}
+              onChange={(images) => set({ images })}
+              label="Supporting images"
+              hint="Financial statement scans, budget screenshots or charts to support the model draft."
+            />
 
             <div className="flex items-center gap-3 pt-1">
               <Button type="submit" disabled={loading}>

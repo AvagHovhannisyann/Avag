@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import ExcelJS from "exceljs";
+import { dataUrlToBuffer, readImageDimensions } from "@/lib/imageDims";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const MIME_TO_XLSX_EXT: Record<string, "jpeg" | "png" | "gif"> = {
+  "image/jpeg": "jpeg",
+  "image/jpg": "jpeg",
+  "image/png": "png",
+  "image/gif": "gif",
+};
 
 const BDO_NAVY = "FF1B3A6B";
 const BDO_RED = "FFE81A3B";
@@ -55,6 +63,49 @@ function addModelSkeleton(
   return ws;
 }
 
+// Adds a "Supporting images" sheet, stacking each uploaded image with a name
+// label above it, sized to its natural aspect ratio (capped) via the workbook
+// image API.
+function addImagesSheet(wb: ExcelJS.Workbook, images: { name: string; dataUrl: string }[]) {
+  const ws = wb.addWorksheet("Supporting images");
+  ws.columns = [{ header: "Supporting images (as uploaded by the consultant)", width: 90 }];
+  styleHeader(ws);
+
+  const maxWidthPx = 520;
+  const maxHeightPx = 380;
+  let rowCursor = 3;
+
+  for (const img of images) {
+    try {
+      const { buffer, mime } = dataUrlToBuffer(img.dataUrl);
+      const extension = MIME_TO_XLSX_EXT[mime] ?? "jpeg";
+      const dims = readImageDimensions(buffer);
+      const scale = dims
+        ? Math.min(maxWidthPx / dims.width, maxHeightPx / dims.height, 1)
+        : 1;
+      const width = dims ? Math.round(dims.width * scale) : maxWidthPx;
+      const height = dims ? Math.round(dims.height * scale) : maxHeightPx;
+
+      ws.getCell(`A${rowCursor}`).value = img.name;
+      ws.getCell(`A${rowCursor}`).font = { bold: true };
+      rowCursor += 1;
+
+      const imageId = wb.addImage({ base64: buffer.toString("base64"), extension });
+      ws.addImage(imageId, {
+        tl: { col: 0, row: rowCursor - 1 },
+        ext: { width, height },
+      } as any);
+
+      // Reserve enough rows (≈20px each) for the image before the next label.
+      rowCursor += Math.ceil(height / 20) + 2;
+    } catch {
+      ws.getCell(`A${rowCursor}`).value = `[Could not embed image: ${img.name}]`;
+      rowCursor += 2;
+    }
+  }
+  return ws;
+}
+
 function styleHeader(ws: ExcelJS.Worksheet) {
   const header = ws.getRow(1);
   header.font = { bold: true, color: { argb: "FFFFFFFF" } };
@@ -68,10 +119,11 @@ function styleHeader(ws: ExcelJS.Worksheet) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { filename, sheets, modelSkeleton } = body as {
+    const { filename, sheets, modelSkeleton, images } = body as {
       filename?: string;
       sheets?: SheetSpec[];
       modelSkeleton?: { currency: string; years: number };
+      images?: { name: string; dataUrl: string }[];
     };
 
     const wb = new ExcelJS.Workbook();
@@ -99,6 +151,10 @@ export async function POST(req: NextRequest) {
 
     if (modelSkeleton) {
       addModelSkeleton(wb, modelSkeleton.currency || "USD", modelSkeleton.years || 5);
+    }
+
+    if (images && images.length) {
+      addImagesSheet(wb, images);
     }
 
     if (wb.worksheets.length === 0) {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { UploadedImageSchema } from "./images";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Input: the information a consultant provides to seed a valuation hypothesis.
@@ -16,6 +17,7 @@ export const ValuationInputSchema = z.object({
   financialSummary: z.string().optional().default(""),
   marketContext: z.string().optional().default(""),
   sectorPackId: z.string().optional().default(""),
+  images: z.array(UploadedImageSchema).optional().default([]),
 });
 export type ValuationInput = z.infer<typeof ValuationInputSchema>;
 

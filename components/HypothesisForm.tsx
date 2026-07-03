@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import ImageUpload from "@/components/ImageUpload";
 import { Sparkles, Eraser, FlaskConical } from "lucide-react";
 
 const SAMPLE: ValuationInput = {
@@ -25,6 +26,7 @@ const SAMPLE: ValuationInput = {
   marketContext:
     "Regional dairy demand growing mid-single digits; input (raw milk) price volatility; increasing competition from imports; export opportunities to neighbouring markets.",
   sectorPackId: "manufacturing",
+  images: [],
 };
 
 const EMPTY: ValuationInput = {
@@ -38,6 +40,7 @@ const EMPTY: ValuationInput = {
   financialSummary: "",
   marketContext: "",
   sectorPackId: "",
+  images: [],
 };
 
 export default function HypothesisForm({
@@ -174,6 +177,12 @@ export default function HypothesisForm({
               onChange={(e) => set({ marketContext: e.target.value })}
             />
           </div>
+
+          <ImageUpload
+            images={form.images}
+            onChange={(images) => set({ images })}
+            hint="Financial statement scans, charts, or photos of operations relevant to this valuation."
+          />
 
           <div className="flex items-center gap-3 pt-1">
             <Button type="submit" disabled={loading}>

@@ -18,6 +18,7 @@ Hard rules:
 - Ground assumptions and comparables in the information given. Where information is missing, do NOT invent facts — instead raise it as a question requiring professional review.
 - Be specific to the company's sector and situation. Avoid generic boilerplate.
 - Distinguish clearly between what is stated in the inputs and what is your professional inference.
+- You may receive supporting images (financial statement scans, charts, photos of operations, screenshots). Read any figures, tables or text visible in them and use that information the same way as text input; do not invent details that are not visible or provided.
 
 You must respond with ONLY a JSON object (no prose, no markdown fences) matching exactly this shape:
 {
@@ -67,6 +68,9 @@ export function buildUserPrompt(input: ValuationInput): string {
     input.marketContext?.trim() || "(not provided)",
     "",
     ...(pack ? [sectorPackPromptBlock(pack), ""] : []),
+    ...(input.images?.length
+      ? [`${input.images.length} supporting image(s) are attached below — review them for relevant figures or context.`, ""]
+      : []),
     "Produce the structured JSON hypothesis now. Where key inputs are missing, reflect that in questionsForReview rather than assuming values.",
   ].join("\n");
 }

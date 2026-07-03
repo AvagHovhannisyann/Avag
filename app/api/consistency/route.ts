@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       user: buildConsistencyUserPrompt(input),
       schema: ConsistencyOutputSchema,
       demo: () => demoConsistency(input),
+      images: input.images,
     });
     return NextResponse.json({
       output: result.data,

@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
       user: buildTangibleUserPrompt(input),
       schema: TangibleOutputSchema,
       demo: () => demoTangible(input),
+      images: input.images,
     });
     return NextResponse.json({
       output: result.data,

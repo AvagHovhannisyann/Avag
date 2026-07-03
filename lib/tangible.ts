@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ReviewSectionModel } from "./review";
 import { ReviewedElement } from "./types";
+import { UploadedImageSchema, imageAckNote } from "./images";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 3 — Tangible Asset Valuation agent.
@@ -21,6 +22,7 @@ export const TangibleInputSchema = z.object({
   specs: z.string().optional().default(""),
   comparablesRaw: z.string().optional().default(""),
   notes: z.string().optional().default(""),
+  images: z.array(UploadedImageSchema).optional().default([]),
 });
 export type TangibleInput = z.infer<typeof TangibleInputSchema>;
 
@@ -69,11 +71,12 @@ export const TANGIBLE_SYSTEM_PROMPT = `You are a Tangible Asset Valuation assist
 Your role is to structure market evidence for the valuation of a tangible asset (equipment, machinery, vehicles, real property) into a disciplined FIRST DRAFT. The consultant sets the final adjustment percentages and value conclusion — you never conclude a value.
 
 Hard rules:
-- Structure each comparable with: name/description, source (link or listing reference from the provided material), price (number), currency, whether the price includes VAT, country of sale, date observed, and a relevance note. Use ONLY listings present in the consultant's pasted material — never invent listings, prices or links. If none are provided, return an empty comparables array and explain in questionsForReview what evidence should be collected.
+- Structure each comparable with: name/description, source (link or listing reference from the provided material), price (number), currency, whether the price includes VAT, country of sale, date observed, and a relevance note. Use ONLY listings present in the consultant's pasted material or attached images — never invent listings, prices or links. If none are provided, return an empty comparables array and explain in questionsForReview what evidence should be collected.
 - Adjustment guidance covers factors such as transportation, customs clearance, technical condition, age and accumulated wear, configuration differences. Suggested percentages are indicative starting points (signed: negative = downward), each with a rationale.
 - Flag unusual data points, missing information or inconsistencies as outlier flags.
 - Draft report sections should follow standard valuation report structure (asset description, methodology, market analysis, adjustments rationale) in a professional, standards-aligned register, clearly marked as draft.
 - Where key information is missing, raise it in questionsForReview rather than assuming.
+- You may receive supporting images: photos of the subject asset (use them to assess visible condition, configuration and wear — feed this into adjustment guidance) and/or screenshots of listings/advertisements (extract comparable data from them exactly as you would from pasted text, citing the image as the source). Never invent details not visible in an image.
 
 Respond with ONLY a JSON object (no prose, no markdown fences) of this exact shape:
 {
@@ -107,6 +110,12 @@ export function buildTangibleUserPrompt(input: TangibleInput): string {
     "Consultant notes:",
     input.notes?.trim() || "(none)",
     "",
+    ...(input.images?.length
+      ? [
+          `${input.images.length} supporting image(s) are attached below — asset photos and/or listing screenshots. Extract any usable evidence from them.`,
+          "",
+        ]
+      : []),
     "Produce the structured JSON now. Use only the evidence provided above.",
   ].join("\n");
 }
@@ -116,7 +125,7 @@ export function buildTangibleUserPrompt(input: TangibleInput): string {
 export function demoTangible(input: TangibleInput): TangibleOutput {
   const asset = input.assetName || "the subject asset";
   return {
-    overview: `Market evidence structure for the valuation of ${asset}. Four comparable listings are organized with source, price, VAT treatment, country and observation date; indicative adjustment factors are proposed for the consultant to set per comparable in the calculation table. All figures are preliminary working inputs.`,
+    overview: `Market evidence structure for the valuation of ${asset}. Four comparable listings are organized with source, price, VAT treatment, country and observation date; indicative adjustment factors are proposed for the consultant to set per comparable in the calculation table. All figures are preliminary working inputs.${imageAckNote(input.images)}`,
     comparables: [
       {
         name: "CAT 320D hydraulic excavator, 2017, ~6,800 h",

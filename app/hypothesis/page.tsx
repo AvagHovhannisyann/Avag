@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { downloadBlob } from "@/lib/download";
+import { UploadedImage } from "@/lib/images";
 import { CheckCheck, FileDown, Info, TriangleAlert } from "lucide-react";
 
 export default function HypothesisPage() {
@@ -23,6 +24,7 @@ export default function HypothesisPage() {
   const [companyName, setCompanyName] = useState("");
   const [summary, setSummary] = useState("");
   const [sections, setSections] = useState<ReviewSectionModel[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>([]);
   const [exporting, setExporting] = useState(false);
 
   const stats = useReviewStats(sections);
@@ -43,6 +45,7 @@ export default function HypothesisPage() {
       setCompanyName(input.companyName);
       setSummary(hypothesis.summary);
       setSections(toReviewSections(hypothesis));
+      setImages(input.images ?? []);
       setSource(data.source);
       setModelName(data.model);
     } catch (e: any) {
@@ -89,6 +92,7 @@ export default function HypothesisPage() {
             { title: "Summary", items: summary ? [summary] : [] },
             ...toExportSections(sections),
           ],
+          images,
         }),
       });
       if (!res.ok) {

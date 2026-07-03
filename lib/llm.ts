@@ -3,13 +3,15 @@ import { z } from "zod";
 import { HypothesisSchema, Hypothesis, ValuationInput } from "./types";
 import { SYSTEM_PROMPT, buildUserPrompt } from "./prompt";
 import { demoHypothesis } from "./demoHypothesis";
+import { UploadedImage } from "./images";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Model abstraction. Talks to any OpenAI-compatible endpoint configured via env
 // (Groq / Gemini / OpenRouter free tiers for prototyping; self-hosted DeepSeek
 // or Qwen for private production). Every agent module calls llmJson() with its
 // own system prompt, user prompt, schema and demo fallback — so the app is
-// always runnable, even with no API key.
+// always runnable, even with no API key. Optional images are attached as
+// vision content parts when a real (vision-capable) model is configured.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface LlmJsonResult<T> {
@@ -33,6 +35,7 @@ export async function llmJson<T>(opts: {
   user: string;
   schema: z.ZodType<T>;
   demo: () => T;
+  images?: UploadedImage[];
 }): Promise<LlmJsonResult<T>> {
   const apiKey = process.env.LLM_API_KEY?.trim();
   const baseURL = process.env.LLM_BASE_URL?.trim();
@@ -44,12 +47,24 @@ export async function llmJson<T>(opts: {
   }
 
   const client = new OpenAI({ apiKey, baseURL });
+
+  const images = opts.images ?? [];
+  const userContent: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [
+    { type: "text", text: opts.user },
+    ...images.map(
+      (img): OpenAI.Chat.Completions.ChatCompletionContentPart => ({
+        type: "image_url",
+        image_url: { url: img.dataUrl },
+      }),
+    ),
+  ];
+
   const completion = await client.chat.completions.create({
     model,
     temperature: 0.2,
     messages: [
       { role: "system", content: opts.system },
-      { role: "user", content: opts.user },
+      { role: "user", content: images.length ? userContent : opts.user },
     ],
   });
 
@@ -72,6 +87,7 @@ export async function generateHypothesis(input: ValuationInput): Promise<Generat
     user: buildUserPrompt(input),
     schema: HypothesisSchema,
     demo: () => demoHypothesis(input),
+    images: input.images,
   });
   return { hypothesis: result.data, source: result.source, model: result.model };
 }

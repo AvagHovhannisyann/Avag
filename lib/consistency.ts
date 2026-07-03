@@ -1,19 +1,32 @@
 import { z } from "zod";
+import { UploadedImageSchema, imageAckNote } from "./images";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 4 — Cross-document consistency checker.
 // The proposal asks for support "to ensure consistency between the Excel
 // financial model, Word report, and PowerPoint presentation". The consultant
-// pastes extracts from two (or three) documents; the agent flags mismatched
-// figures, dates, assumptions and terminology.
+// pastes extracts from two (or three) documents — or attaches screenshots of
+// them instead — and the agent flags mismatched figures, dates, assumptions
+// and terminology.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const ConsistencyInputSchema = z.object({
-  modelExtract: z.string().min(1, "Model extract is required"),
-  reportExtract: z.string().min(1, "Report extract is required"),
-  presentationExtract: z.string().optional().default(""),
-  context: z.string().optional().default(""),
-});
+export const ConsistencyInputSchema = z
+  .object({
+    modelExtract: z.string().optional().default(""),
+    reportExtract: z.string().optional().default(""),
+    presentationExtract: z.string().optional().default(""),
+    context: z.string().optional().default(""),
+    images: z.array(UploadedImageSchema).optional().default([]),
+  })
+  .refine(
+    (v) => {
+      const textSources = [v.modelExtract, v.reportExtract, v.presentationExtract].filter(
+        (s) => s.trim().length > 0,
+      ).length;
+      return textSources + v.images.length >= 2;
+    },
+    { message: "Provide at least two extracts to compare — as pasted text and/or screenshots." },
+  );
 export type ConsistencyInput = z.infer<typeof ConsistencyInputSchema>;
 
 export const ConsistencyOutputSchema = z.object({
@@ -42,6 +55,7 @@ Rules:
 - Every finding must cite where each side of the mismatch appears (locations).
 - Severity: "high" = contradictory numbers/conclusions; "medium" = ambiguous or unit/scale risks; "low" = terminology/formatting drift.
 - If the extracts are consistent, return an empty findings array and say so in the summary.
+- Extracts may be provided as pasted text and/or as attached screenshots of the model, report or presentation. Treat visible figures and text in screenshots exactly as you would pasted text, and cite which screenshot a finding comes from (e.g. "image 2") when relevant.
 
 Respond with ONLY a JSON object (no prose, no markdown fences) of this exact shape:
 {
@@ -56,22 +70,29 @@ export function buildConsistencyUserPrompt(input: ConsistencyInput): string {
     "",
     input.context ? `Engagement context: ${input.context}\n` : "",
     "=== EXCEL MODEL EXTRACT ===",
-    input.modelExtract.trim(),
+    input.modelExtract.trim() || "(none pasted — see attached images, if any)",
     "",
     "=== WORD REPORT EXTRACT ===",
-    input.reportExtract.trim(),
+    input.reportExtract.trim() || "(none pasted — see attached images, if any)",
     "",
     ...(input.presentationExtract?.trim()
       ? ["=== POWERPOINT EXTRACT ===", input.presentationExtract.trim(), ""]
+      : []),
+    ...(input.images?.length
+      ? [
+          `${input.images.length} screenshot(s) are attached below — they may cover the model, report and/or presentation. Compare them against each other and against any pasted text above.`,
+          "",
+        ]
       : []),
     "Produce the structured JSON findings now.",
   ].join("\n");
 }
 
-export function demoConsistency(_input: ConsistencyInput): ConsistencyOutput {
+export function demoConsistency(input: ConsistencyInput): ConsistencyOutput {
   return {
     summary:
-      "Demo check across the provided extracts: three indicative inconsistencies flagged — one numeric contradiction, one unit/scale risk and one terminology drift. Configure a model API key to run a real comparison of your own extracts.",
+      "Demo check across the provided extracts: three indicative inconsistencies flagged — one numeric contradiction, one unit/scale risk and one terminology drift. Configure a model API key to run a real comparison of your own extracts." +
+      imageAckNote(input.images),
     findings: [
       {
         severity: "high",

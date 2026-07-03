@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ReviewSectionModel } from "./review";
 import { ReviewedElement } from "./types";
 import { sectorPackById, sectorPackPromptBlock } from "./sectors";
+import { UploadedImageSchema, imageAckNote } from "./images";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Phase 2 — Financial Modeling & Business Planning assistant.
@@ -23,6 +24,7 @@ export const FinModelInputSchema = z.object({
   businessContext: z.string().optional().default(""),
   assumptionNotes: z.string().optional().default(""),
   sectorPackId: z.string().optional().default(""),
+  images: z.array(UploadedImageSchema).optional().default([]),
 });
 export type FinModelInput = z.infer<typeof FinModelInputSchema>;
 
@@ -92,6 +94,7 @@ Hard rules:
 - Consistency checks must examine coherence between historical performance, forecast assumptions and model outputs.
 - Scenario set should normally include a base, upside and downside case tailored to this business.
 - The narrative draft is the "financial plan" section text for a report — professional, measured, no hype, clearly flagged assumptions.
+- You may receive supporting images (financial statement scans, budget screenshots, charts). Read any figures or tables visible in them and use that information the same way as text input; do not invent details not visible or provided.
 
 Respond with ONLY a JSON object (no prose, no markdown fences) of this exact shape:
 {
@@ -135,6 +138,9 @@ export function buildFinModelUserPrompt(input: FinModelInput): string {
     input.assumptionNotes?.trim() || "(not provided)",
     ``,
     ...(pack ? [sectorPackPromptBlock(pack), ""] : []),
+    ...(input.images?.length
+      ? [`${input.images.length} supporting image(s) are attached below — review them for relevant figures or context.`, ""]
+      : []),
     `Produce the structured JSON now. Remember: describe bases and logic; never fabricate unsupported numbers.`,
   ].join("\n");
 }
@@ -145,9 +151,11 @@ export function demoFinModel(input: FinModelInput): FinModelOutput {
   const co = input.companyName || "the company";
   const isExisting = input.mode === "existing";
   return {
-    overview: isExisting
-      ? `First-draft model structure for the valuation of ${co}. Historical financials are normalized for one-off and related-party effects, assumptions are structured across the six standard categories, and base/upside/downside scenarios are proposed. All items below require consultant review.`
-      : `First-draft financial plan structure for ${co} as a new project. Assumptions are framed from market research and benchmarks and organized across the six standard categories, with scenarios and sensitivities proposed. All items below require consultant review.`,
+    overview:
+      (isExisting
+        ? `First-draft model structure for the valuation of ${co}. Historical financials are normalized for one-off and related-party effects, assumptions are structured across the six standard categories, and base/upside/downside scenarios are proposed. All items below require consultant review.`
+        : `First-draft financial plan structure for ${co} as a new project. Assumptions are framed from market research and benchmarks and organized across the six standard categories, with scenarios and sensitivities proposed. All items below require consultant review.`) +
+      imageAckNote(input.images),
     normalizationAdjustments: isExisting
       ? [
           {

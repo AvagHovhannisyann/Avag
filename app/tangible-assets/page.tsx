@@ -19,6 +19,7 @@ import { ReviewSectionModel, toExportSections } from "@/lib/review";
 import { ReviewedElement } from "@/lib/types";
 import ReviewBoard, { ReviewStats, useReviewStats } from "@/components/ReviewBoard";
 import ComparablesTable from "@/components/ComparablesTable";
+import ImageUpload from "@/components/ImageUpload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,7 @@ const EMPTY: TangibleInput = {
   specs: "",
   comparablesRaw: "",
   notes: "",
+  images: [],
 };
 
 const SAMPLE: TangibleInput = {
@@ -65,6 +67,7 @@ const SAMPLE: TangibleInput = {
     "3) CAT 320DL 2016, 8,200h — EUR 48,500 net (auction platform, Poland, 25.06.2026)\n" +
     "4) CAT 320D2 2019, 4,100h — USD 88,000 net (regional marketplace, Georgia, 28.06.2026)",
   notes: "Bank requires market value with a liquidation cross-check.",
+  images: [],
 };
 
 export default function TangibleAssetsPage() {
@@ -157,6 +160,7 @@ export default function TangibleAssetsPage() {
                 : [],
             },
           ],
+          images: form.images,
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error || "Export failed.");
@@ -237,6 +241,7 @@ export default function TangibleAssetsPage() {
                 : [["Included comparables", 0]],
             },
           ],
+          images: form.images,
         }),
       });
       if (!res.ok) throw new Error((await res.json()).error || "Export failed.");
@@ -368,6 +373,12 @@ export default function TangibleAssetsPage() {
                 onChange={(e) => set({ notes: e.target.value })}
               />
             </div>
+
+            <ImageUpload
+              images={form.images}
+              onChange={(images) => set({ images })}
+              hint="Photos of the asset's condition, or screenshots of listings/advertisements — extracted the same way as pasted text."
+            />
 
             <div className="flex items-center gap-3 pt-1">
               <Button type="submit" disabled={loading}>
