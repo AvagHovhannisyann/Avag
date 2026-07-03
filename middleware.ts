@@ -9,9 +9,15 @@ const PUBLIC_PATHS = ["/login", "/auth/callback"];
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supaAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Fail open (no auth gate) if Supabase isn't configured yet, rather than
+  // crashing every request — mirrors the LLM demo-mode fallback elsewhere.
+  if (!supaUrl || !supaAnonKey) return response;
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supaUrl,
+    supaAnonKey,
     {
       cookies: {
         getAll() {

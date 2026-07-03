@@ -16,10 +16,16 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Fail open if Supabase isn't configured yet (mirrors middleware.ts) so the
+  // rest of the app still renders instead of crashing on every page.
+  let userEmail: string | null = null;
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userEmail = user?.email ?? null;
+  }
 
   return (
     <html lang="en">
@@ -40,7 +46,7 @@ export default async function RootLayout({
             </div>
             <div className="flex items-center gap-1">
               <NavLinks />
-              <UserMenu email={user?.email ?? null} />
+              <UserMenu email={userEmail} />
             </div>
           </div>
         </header>
